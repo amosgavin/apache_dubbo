@@ -61,7 +61,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
         RpcException le = null; // last exception.
         List<Invoker<T>> invoked = new ArrayList<Invoker<T>>(copyinvokers.size()); // invoked invokers.
         Set<String> providers = new HashSet<String>(len);
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < len; ) {  // by zhangyao
         	//重试时，进行重新选择，避免重试时invoker列表已发生变化.
         	//注意：如果列表发生了变化，那么invoked判断会失效，因为invoker示例已经改变
         	if (i > 0) {
@@ -92,11 +92,18 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
                     throw e;
                 }
                 le = e;
+                // by zhangyao 20140807 如果是网络错误且仍有地址可以尝试，则重新尝试别的地址
+                if (e.isNetwork() && (copyinvokers.size() > invoked.size())) {
+                    logger.warn("Network exception, retry another provider.", e);
+                    continue;
+                }
+
             } catch (Throwable e) {
                 le = new RpcException(e.getMessage(), e);
             } finally {
                 providers.add(invoker.getUrl().getAddress());
             }
+            i++;  // by zhangyao
         }
         throw new RpcException(le != null ? le.getCode() : 0, "Failed to invoke the method "
                 + invocation.getMethodName() + " in the service " + getInterface().getName() 

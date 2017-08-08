@@ -339,8 +339,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * 将urls转成invokers,如果url已经被refer过，不再重新引用。
      * 
      * @param urls
-     * @param overrides
-     * @param query
      * @return invokers
      */
     private Map<String, Invoker<T>> toInvokers(List<URL> urls) {
@@ -411,7 +409,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     /**
      * 合并url参数 顺序为override > -D >Consumer > Provider
      * @param providerUrl
-     * @param overrides
      * @return
      */
     private URL mergeUrl(URL providerUrl){
@@ -533,8 +530,6 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     /**
      * 检查缓存中的invoker是否需要被destroy
      * 如果url中指定refer.autodestroy=false，则只增加不减少，可能会有refer泄漏，
-     * 
-     * @param invokers
      */
     private void destroyUnusedInvokers(Map<String, Invoker<T>> oldUrlInvokerMap, Map<String, Invoker<T>> newUrlInvokerMap) {
         if (newUrlInvokerMap == null || newUrlInvokerMap.size() == 0) {
@@ -575,9 +570,11 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     }
 
     public List<Invoker<T>> doList(Invocation invocation) {
-        if (forbidden) {
-            throw new RpcException(RpcException.FORBIDDEN_EXCEPTION, "Forbid consumer " +  NetUtils.getLocalHost() + " access service " + getInterface().getName() + " from registry " + getUrl().getAddress() + " use dubbo version " + Version.getVersion() + ", Please check registry access list (whitelist/blacklist).");
-        }
+        // by zhangyao 20140806 forbidden并没有参与blacklist控制，forbidden在该类里没有实质作用
+        // by wuhongqiang 在无服务端时，关闭以下代码可以让client进入mock
+//        if (forbidden) {
+//            throw new RpcException(RpcException.FORBIDDEN_EXCEPTION, "Forbid consumer " +  NetUtils.getLocalHost() + " access service " + getInterface().getName() + " from registry " + getUrl().getAddress() + " use dubbo version " + Version.getVersion() + ", Please check registry access list (whitelist/blacklist).");
+//        }
         List<Invoker<T>> invokers = null;
         Map<String, List<Invoker<T>>> localMethodInvokerMap = this.methodInvokerMap; // local reference
         if (localMethodInvokerMap != null && localMethodInvokerMap.size() > 0) {
